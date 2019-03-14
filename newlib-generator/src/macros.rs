@@ -9,15 +9,12 @@ macro_rules! f32 {
 #![no_main]
 #![no_std]
 
-#[macro_use]
-extern crate qemu_arm_rt as rt;
-
 use core::u32;
+extern crate panic_halt;
+use cortex_m::asm;
+use cortex_m_rt::entry;
 
-use rt::{{io, process}};
-
-entry!(main);
-
+#[entry]
 fn main() {{
     run().unwrap_or_else(|e| {{
         eprintln!(\"error: {{}}\", e);
@@ -86,15 +83,14 @@ macro_rules! f32f32 {
 #![no_main]
 #![no_std]
 
-#[macro_use]
-extern crate qemu_arm_rt as rt;
-
 use core::u32;
+extern crate cortex_m_rt;
+extern crate cortex_m;
+extern crate panic_halt;
+use cortex_m::asm;
+use cortex_m_rt::entry;
 
-use rt::{{io, process}};
-
-entry!(main);
-
+#[entry]
 fn main() {{
     run().unwrap_or_else(|e| {{
         eprintln!(\"error: {{}}\", e);
@@ -169,15 +165,14 @@ macro_rules! f32f32f32 {
 #![no_main]
 #![no_std]
 
-#[macro_use]
-extern crate qemu_arm_rt as rt;
-
 use core::u32;
+extern crate cortex_m_rt;
+extern crate cortex_m;
+extern crate panic_halt;
+use cortex_m::asm;
+use cortex_m_rt::entry;
 
-use rt::{{io, process}};
-
-entry!(main);
-
+#[entry]
 fn main() {{
     run().unwrap_or_else(|e| {{
         eprintln!(\"error: {{}}\", e);

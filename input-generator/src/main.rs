@@ -9,6 +9,13 @@ use rand::{RngCore, SeedableRng, XorShiftRng};
 
 const NTESTS: usize = 10_000;
 
+extern crate cortex_m_rt;
+extern crate cortex_m;
+extern crate panic_halt;
+use cortex_m::asm;
+use cortex_m_rt::entry;
+
+#[entry]
 fn main() -> Result<(), Box<Error>> {
     let mut rng = XorShiftRng::from_rng(&mut rand::thread_rng())?;
 

@@ -8,6 +8,13 @@ use std::process::{Command, Stdio};
 #[macro_use]
 mod macros;
 
+extern crate cortex_m_rt;
+extern crate cortex_m;
+extern crate panic_halt;
+use cortex_m::asm;
+use cortex_m_rt::entry;
+
+#[entry]
 fn main() -> Result<(), Box<Error>> {
     const F32: &[u8] = include_bytes!("../../bin/input/f32");
 

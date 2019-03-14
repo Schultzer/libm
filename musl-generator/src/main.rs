@@ -8,6 +8,13 @@ use std::io::Write;
 #[macro_use]
 mod macros;
 
+extern crate cortex_m_rt;
+extern crate cortex_m;
+extern crate panic_halt;
+use cortex_m::asm;
+use cortex_m_rt::entry;
+
+#[entry]
 fn main() -> Result<(), Box<Error>> {
     f32! {
         acosf,
