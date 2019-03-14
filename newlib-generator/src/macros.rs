@@ -33,10 +33,10 @@ fn run() -> Result<(), usize> {{
 
     let mut buf = [0; 4];
     while let Ok(()) = io::Stdin.read_exact(&mut buf) {{
-        let x = f32::from_bits(u32::from_bytes(buf));
+        let x = f32::from_bits(u32::from_ne_bytes(buf));
         let y = unsafe {{ {0}(x) }};
 
-        io::Stdout.write_all(&y.to_bits().to_bytes())?;
+        io::Stdout.write_all(&y.to_bits().to_ne_bytes())?;
     }}
 
     Ok(())
@@ -112,14 +112,14 @@ fn run() -> Result<(), usize> {{
     while let Ok(()) = io::Stdin.read_exact(&mut chunk) {{
         let mut buf = [0; 4];
         buf.copy_from_slice(&chunk[..4]);
-        let x0 = f32::from_bits(u32::from_bytes(buf));
+        let x0 = f32::from_bits(u32::from_ne_bytes(buf));
 
         buf.copy_from_slice(&chunk[4..]);
-        let x1 = f32::from_bits(u32::from_bytes(buf));
+        let x1 = f32::from_bits(u32::from_ne_bytes(buf));
 
         let y = unsafe {{ {0}(x0, x1) }};
 
-        io::Stdout.write_all(&y.to_bits().to_bytes())?;
+        io::Stdout.write_all(&y.to_bits().to_ne_bytes())?;
     }}
 
     Ok(())
@@ -205,7 +205,7 @@ fn run() -> Result<(), usize> {{
 
         let y = unsafe {{ {0}(x0, x1, x2) }};
 
-        io::Stdout.write_all(&y.to_bits().to_bytes())?;
+        io::Stdout.write_all(&y.to_bits().to_ne_bytes())?;
     }}
 
     Ok(())
