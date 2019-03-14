@@ -56,3 +56,4 @@ branches:
   only:
     - staging
     - trying
+    - fix-overflow-checks
