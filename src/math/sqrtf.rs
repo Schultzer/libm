@@ -22,7 +22,7 @@ pub fn sqrtf(x: f32) -> f32 {
     // `f32.sqrt` native instruction, so we can leverage this for both code size
     // and speed.
     llvm_intrinsically_optimized! {
-        #[cfg(target_arch = "wasm32")] {
+        #[cfg(target_arch = "wasm32", target_arch = "arm")] {
             return if x < 0.0 {
                 ::core::f32::NAN
             } else {
@@ -30,17 +30,8 @@ pub fn sqrtf(x: f32) -> f32 {
             }
         }
     }
-    let mut z: f32;
-    let sign: i32 = 0x80000000u32 as i32;
-    let mut ix: i32;
-    let mut s: i32;
-    let mut q: i32;
-    let mut m: i32;
-    let mut t: i32;
-    let mut i: i32;
-    let mut r: u32;
-
-    ix = x.to_bits() as i32;
+    let sign = 0x80000000u32 as i32;
+    let mut ix = x.to_bits() as i32;
 
     /* take care of Inf and NaN */
     if (ix as u32 & 0x7f800000) == 0x7f800000 {
@@ -58,10 +49,10 @@ pub fn sqrtf(x: f32) -> f32 {
     }
 
     /* normalize x */
-    m = ix >> 23;
+    let mut m = ix >> 23;
     if m == 0 {
         /* subnormal x */
-        i = 0;
+        let mut i = 0;
         while ix & 0x00800000 == 0 {
             ix <<= 1;
             i = i + 1;
@@ -78,12 +69,12 @@ pub fn sqrtf(x: f32) -> f32 {
 
     /* generate sqrt(x) bit by bit */
     ix += ix;
-    q = 0;
-    s = 0;
-    r = 0x01000000; /* r = moving bit from right to left */
+    let mut q = 0;
+    let mut s = 0;
+    let mut r = 0x01000000; /* r = moving bit from right to left */
 
     while r != 0 {
-        t = s + r as i32;
+        let t = s + r as i32;
         if t <= ix {
             s = t + r as i32;
             ix -= t;
@@ -95,7 +86,7 @@ pub fn sqrtf(x: f32) -> f32 {
 
     /* use floating add to find out rounding direction */
     if ix != 0 {
-        z = 1.0 - TINY; /* raise inexact flag */
+        let mut z = 1.0 - TINY; /* raise inexact flag */
         if z >= 1.0 {
             z = 1.0 + TINY;
             if z > 1.0 {
@@ -109,4 +100,12 @@ pub fn sqrtf(x: f32) -> f32 {
     ix = (q >> 1) + 0x3f000000;
     ix += m << 23;
     f32::from_bits(ix as u32)
+}
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn sanity_check() {
+        assert_eq!(super::sqrtf(1.1), 1.0488088);
+    }
 }

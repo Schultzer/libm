@@ -39,18 +39,9 @@ use super::{cos, fabs, get_high_word, get_low_word, j0, j1, log, sin, sqrt, y0, 
 const INVSQRTPI: f64 = 5.64189583547756279280e-01; /* 0x3FE20DD7, 0x50429B6D */
 
 pub fn jn(n: i32, mut x: f64) -> f64 {
-    let mut ix: u32;
-    let lx: u32;
-    let nm1: i32;
-    let mut i: i32;
-    let mut sign: bool;
-    let mut a: f64;
-    let mut b: f64;
-    let mut temp: f64;
-
-    ix = get_high_word(x);
-    lx = get_low_word(x);
-    sign = (ix >> 31) != 0;
+    let mut ix = get_high_word(x);
+    let lx = get_low_word(x);
+    let mut sign = (ix >> 31) != 0;
     ix &= 0x7fffffff;
 
     // -lx == !lx + 1
@@ -66,6 +57,8 @@ pub fn jn(n: i32, mut x: f64) -> f64 {
     if n == 0 {
         return j0(x);
     }
+
+    let nm1;
     if n < 0 {
         nm1 = -(n + 1);
         x = -x;
@@ -79,6 +72,10 @@ pub fn jn(n: i32, mut x: f64) -> f64 {
 
     sign &= (n & 1) != 0; /* even n: 0, odd n: signbit(x) */
     x = fabs(x);
+    let mut a;
+    let mut b;
+    let mut temp;
+    let mut i;
     if (ix | lx) == 0 || ix == 0x7ff00000 {
         /* if x is 0 or inf */
         b = 0.0;
@@ -252,23 +249,13 @@ pub fn jn(n: i32, mut x: f64) -> f64 {
 }
 
 pub fn yn(n: i32, x: f64) -> f64 {
-    let mut ix: u32;
-    let lx: u32;
-    let mut ib: u32;
-    let nm1: i32;
-    let mut sign: bool;
-    let mut i: i32;
-    let mut a: f64;
-    let mut b: f64;
-    let mut temp: f64;
-
-    ix = get_high_word(x);
-    lx = get_low_word(x);
-    sign = (ix >> 31) != 0;
+    let mut ix = get_high_word(x);
+    let lx = get_low_word(x);
+    let mut sign = (ix >> 31) != 0;
     ix &= 0x7fffffff;
 
     // -lx == !lx + 1
-    if (ix | (lx | ((!lx).wrapping_add(1))) >> 31) > 0x7ff00000 {
+    if ix | (lx | (!lx).wrapping_add(1)) >> 31 > 0x7ff00000 {
         /* nan */
         return x;
     }
@@ -283,9 +270,11 @@ pub fn yn(n: i32, x: f64) -> f64 {
     if n == 0 {
         return y0(x);
     }
+
+    let nm1;
     if n < 0 {
         nm1 = -(n + 1);
-        sign = (n & 1) != 0;
+        sign = n & 1 != 0;
     } else {
         nm1 = n - 1;
         sign = false;
@@ -298,6 +287,8 @@ pub fn yn(n: i32, x: f64) -> f64 {
         }
     }
 
+    let mut b;
+    let mut temp;
     if ix >= 0x52d00000 {
         /* x > 2**302 */
         /* (x >> n**2)
@@ -321,11 +312,11 @@ pub fn yn(n: i32, x: f64) -> f64 {
         };
         b = INVSQRTPI * temp / sqrt(x);
     } else {
-        a = y0(x);
+        let mut a = y0(x);
         b = y1(x);
         /* quit if b is -inf */
-        ib = get_high_word(b);
-        i = 0;
+        let mut ib = get_high_word(b);
+        let mut i = 0;
         while i < nm1 && ib != 0xfff00000 {
             i += 1;
             temp = b;
@@ -339,5 +330,36 @@ pub fn yn(n: i32, x: f64) -> f64 {
         -b
     } else {
         b
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn test_from_ci_one() {
+        let ret = super::jn(114, f64::from_bits(4594974205335009568));
+        assert_eq!(ret, f64::from_bits(1617394868955));
+    }
+
+    #[test]
+    fn test_from_ci_two() {
+        let ret = super::jn(136, f64::from_bits(4602429132083530282));
+        assert_eq!(ret, f64::from_bits(15924833));
+    }
+
+    // ---- jn_matches_musl stdout ----
+    // thread 'main' panicked at 'INPUT: [30144, -4503599627370496] EXPECTED: [0] ACTUAL -inf', /target/aarch64-unknown-linux-gnu/release/build/libm-11858a34fff673b0/out/musl-tests.rs:108:17
+    #[test]
+    fn test_from_ci_three() {
+        let ret = super::jn(30144, -f64::from_bits(4503599627370496));
+        assert_eq!(ret, f64::from_bits(0));
+    }
+
+    // ---- yn_matches_musl stdout ----
+    // thread 'main' panicked at 'INPUT: [-79792583, 9218868437227405312] EXPECTED: [0] ACTUAL inf', /target/aarch64-unknown-linux-gnu/release/build/libm-11858a34fff673b0/out/musl-tests.rs:110:17
+    #[test]
+    fn test_from_ci_four() {
+        let ret = super::yn(-79792583, f64::from_bits(9218868437227405312));
+        assert_eq!(ret, f64::from_bits(0));
     }
 }

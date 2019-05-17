@@ -60,12 +60,6 @@ const TPI: f64 = 6.36619772367581382433e-01; /* 0x3FE45F30, 0x6DC9C883 */
 
 /* common method when |x|>=2 */
 fn common(ix: u32, x: f64, y0: bool) -> f64 {
-    let s: f64;
-    let mut c: f64;
-    let mut ss: f64;
-    let mut cc: f64;
-    let z: f64;
-
     /*
      * j0(x) = sqrt(2/(pi*x))*(p0(x)*cos(x-pi/4)-q0(x)*sin(x-pi/4))
      * y0(x) = sqrt(2/(pi*x))*(p0(x)*sin(x-pi/4)+q0(x)*cos(x-pi/4))
@@ -74,16 +68,16 @@ fn common(ix: u32, x: f64, y0: bool) -> f64 {
      * cos(x-pi/4) = (sin(x) + cos(x))/sqrt(2)
      * sin(x) +- cos(x) = -cos(2x)/(sin(x) -+ cos(x))
      */
-    s = sin(x);
-    c = cos(x);
+    let s = sin(x);
+    let mut c = cos(x);
     if y0 {
         c = -c;
     }
-    cc = s + c;
+    let mut cc = s + c;
     /* avoid overflow in 2*x, big ulp error when x>=0x1p1023 */
     if ix < 0x7fe00000 {
-        ss = s - c;
-        z = -cos(2.0 * x);
+        let mut ss = s - c;
+        let z = -cos(2.0 * x);
         if s * c < 0.0 {
             cc = z / ss;
         } else {
@@ -110,14 +104,7 @@ const S03: f64 = 5.13546550207318111446e-07; /* 0x3EA13B54, 0xCE84D5A9 */
 const S04: f64 = 1.16614003333790000205e-09; /* 0x3E1408BC, 0xF4745D8F */
 
 pub fn j0(mut x: f64) -> f64 {
-    let z: f64;
-    let r: f64;
-    let s: f64;
-    let mut ix: u32;
-
-    ix = get_high_word(x);
-    ix &= 0x7fffffff;
-
+    let ix = get_high_word(x) & 0x7fffffff;
     /* j0(+-inf)=0, j0(nan)=nan */
     if ix >= 0x7ff00000 {
         return 1.0 / (x * x);
@@ -134,9 +121,9 @@ pub fn j0(mut x: f64) -> f64 {
     if ix >= 0x3f200000 {
         /* |x| >= 2**-13 */
         /* up to 4ulp error close to 2 */
-        z = x * x;
-        r = z * (R02 + z * (R03 + z * (R04 + z * R05)));
-        s = 1.0 + z * (S01 + z * (S02 + z * (S03 + z * S04)));
+        let z = x * x;
+        let r = z * (R02 + z * (R03 + z * (R04 + z * R05)));
+        let s = 1.0 + z * (S01 + z * (S02 + z * (S03 + z * S04)));
         return (1.0 + x / 2.0) * (1.0 - x / 2.0) + z * (r / s);
     }
 
@@ -163,14 +150,8 @@ const V03: f64 = 2.59150851840457805467e-07; /* 0x3E91642D, 0x7FF202FD */
 const V04: f64 = 4.41110311332675467403e-10; /* 0x3DFE5018, 0x3BD6D9EF */
 
 pub fn y0(x: f64) -> f64 {
-    let z: f64;
-    let u: f64;
-    let v: f64;
-    let ix: u32;
-    let lx: u32;
-
-    ix = get_high_word(x);
-    lx = get_low_word(x);
+    let ix = get_high_word(x);
+    let lx = get_low_word(x);
 
     /* y0(nan)=nan, y0(<0)=nan, y0(0)=-inf, y0(inf)=0 */
     if ((ix << 1) | lx) == 0 {
@@ -193,9 +174,9 @@ pub fn y0(x: f64) -> f64 {
     if ix >= 0x3e400000 {
         /* x >= 2**-27 */
         /* large ulp error near the first zero, x ~= 0.89 */
-        z = x * x;
-        u = U00 + z * (U01 + z * (U02 + z * (U03 + z * (U04 + z * (U05 + z * U06)))));
-        v = 1.0 + z * (V01 + z * (V02 + z * (V03 + z * V04)));
+        let z = x * x;
+        let u = U00 + z * (U01 + z * (U02 + z * (U03 + z * (U04 + z * (U05 + z * U06)))));
+        let v = 1.0 + z * (V01 + z * (V02 + z * (V03 + z * V04)));
         return u / v + TPI * (j0(x) * log(x));
     }
     return U00 + TPI * log(x);
@@ -281,13 +262,7 @@ const PS2: [f64; 5] = [
 fn pzero(x: f64) -> f64 {
     let p: &[f64; 6];
     let q: &[f64; 5];
-    let z: f64;
-    let r: f64;
-    let s: f64;
-    let mut ix: u32;
-
-    ix = get_high_word(x);
-    ix &= 0x7fffffff;
+    let ix = get_high_word(x) & 0x7fffffff;
     if ix >= 0x40200000 {
         p = &PR8;
         q = &PS8;
@@ -303,9 +278,9 @@ fn pzero(x: f64) -> f64 {
         p = &PR2;
         q = &PS2;
     }
-    z = 1.0 / (x * x);
-    r = p[0] + z * (p[1] + z * (p[2] + z * (p[3] + z * (p[4] + z * p[5]))));
-    s = 1.0 + z * (q[0] + z * (q[1] + z * (q[2] + z * (q[3] + z * q[4]))));
+    let z = 1.0 / (x * x);
+    let r = p[0] + z * (p[1] + z * (p[2] + z * (p[3] + z * (p[4] + z * p[5]))));
+    let s = 1.0 + z * (q[0] + z * (q[1] + z * (q[2] + z * (q[3] + z * q[4]))));
     return 1.0 + r / s;
 }
 
@@ -393,13 +368,7 @@ const QS2: [f64; 6] = [
 fn qzero(x: f64) -> f64 {
     let p: &[f64; 6];
     let q: &[f64; 6];
-    let s: f64;
-    let r: f64;
-    let z: f64;
-    let mut ix: u32;
-
-    ix = get_high_word(x);
-    ix &= 0x7fffffff;
+    let ix = get_high_word(x) & 0x7fffffff;
     if ix >= 0x40200000 {
         p = &QR8;
         q = &QS8;
@@ -415,8 +384,8 @@ fn qzero(x: f64) -> f64 {
         p = &QR2;
         q = &QS2;
     }
-    z = 1.0 / (x * x);
-    r = p[0] + z * (p[1] + z * (p[2] + z * (p[3] + z * (p[4] + z * p[5]))));
-    s = 1.0 + z * (q[0] + z * (q[1] + z * (q[2] + z * (q[3] + z * (q[4] + z * q[5])))));
+    let z = 1.0 / (x * x);
+    let r = p[0] + z * (p[1] + z * (p[2] + z * (p[3] + z * (p[4] + z * p[5]))));
+    let s = 1.0 + z * (q[0] + z * (q[1] + z * (q[2] + z * (q[3] + z * (q[4] + z * q[5])))));
     return (-0.125 + r / s) / x;
 }

@@ -16,16 +16,8 @@
 use super::{fabsf, j0f, j1f, logf, y0f, y1f};
 
 pub fn jnf(n: i32, mut x: f32) -> f32 {
-    let mut ix: u32;
-    let mut nm1: i32;
-    let mut sign: bool;
-    let mut i: i32;
-    let mut a: f32;
-    let mut b: f32;
-    let mut temp: f32;
-
-    ix = x.to_bits();
-    sign = (ix >> 31) != 0;
+    let mut ix = x.to_bits();
+    let mut sign = ix >> 31 != 0;
     ix &= 0x7fffffff;
     if ix > 0x7f800000 {
         /* nan */
@@ -36,6 +28,7 @@ pub fn jnf(n: i32, mut x: f32) -> f32 {
     if n == 0 {
         return j0f(x);
     }
+    let mut nm1;
     if n < 0 {
         nm1 = -(n + 1);
         x = -x;
@@ -49,6 +42,10 @@ pub fn jnf(n: i32, mut x: f32) -> f32 {
 
     sign &= (n & 1) != 0; /* even n: 0, odd n: signbit(x) */
     x = fabsf(x);
+    let mut i;
+    let mut a;
+    let mut b;
+    let mut temp;
     if ix == 0 || ix == 0x7f800000 {
         /* if x is 0 or inf */
         b = 0.0;
@@ -60,7 +57,7 @@ pub fn jnf(n: i32, mut x: f32) -> f32 {
         while i < nm1 {
             i += 1;
             temp = b;
-            b = b * (2.0 * (i as f32) / x) - a;
+            b = b * (2.0 * i as f32 / x) - a;
             a = temp;
         }
     } else {
@@ -113,23 +110,14 @@ pub fn jnf(n: i32, mut x: f32) -> f32 {
              * When Q(k) > 1e17     good for quadruple
              */
             /* determine k */
-            let mut t: f32;
-            let mut q0: f32;
-            let mut q1: f32;
-            let mut w: f32;
-            let h: f32;
-            let mut z: f32;
-            let mut tmp: f32;
-            let nf: f32;
-            let mut k: i32;
-
-            nf = (nm1 as f32) + 1.0;
-            w = 2.0 * (nf as f32) / x;
-            h = 2.0 / x;
-            z = w + h;
-            q0 = w;
-            q1 = w * z - 1.0;
-            k = 1;
+            let nf = nm1 as f32 + 1.0;
+            let mut w = 2.0 * nf as f32 / x;
+            let h = 2.0 / x;
+            let mut z = w + h;
+            let mut q0 = w;
+            let mut q1 = w * z - 1.0;
+            let mut k = 1;
+            let mut tmp;
             while q1 < 1.0e4 {
                 k += 1;
                 z += h;
@@ -137,10 +125,10 @@ pub fn jnf(n: i32, mut x: f32) -> f32 {
                 q0 = q1;
                 q1 = tmp;
             }
-            t = 0.0;
+            let mut t = 0.0;
             i = k;
             while i >= 0 {
-                t = 1.0 / (2.0 * ((i as f32) + nf) / x - t);
+                t = 1.0 / (2.0 * (i as f32 + nf) / x - t);
                 i -= 1;
             }
             a = t;
@@ -158,7 +146,7 @@ pub fn jnf(n: i32, mut x: f32) -> f32 {
                 i = nm1;
                 while i > 0 {
                     temp = b;
-                    b = 2.0 * (i as f32) * b / x - a;
+                    b = 2.0 * i as f32 * b / x - a;
                     a = temp;
                     i -= 1;
                 }
@@ -166,7 +154,7 @@ pub fn jnf(n: i32, mut x: f32) -> f32 {
                 i = nm1;
                 while i > 0 {
                     temp = b;
-                    b = 2.0 * (i as f32) * b / x - a;
+                    b = 2.0 * i as f32 * b / x - a;
                     a = temp;
                     /* scale b to avoid spurious overflow */
                     let x1p60 = f32::from_bits(0x5d800000); // 0x1p60 == 2^60
@@ -196,17 +184,8 @@ pub fn jnf(n: i32, mut x: f32) -> f32 {
 }
 
 pub fn ynf(n: i32, x: f32) -> f32 {
-    let mut ix: u32;
-    let mut ib: u32;
-    let nm1: i32;
-    let mut sign: bool;
-    let mut i: i32;
-    let mut a: f32;
-    let mut b: f32;
-    let mut temp: f32;
-
-    ix = x.to_bits();
-    sign = (ix >> 31) != 0;
+    let mut ix = x.to_bits();
+    let mut sign = (ix >> 31) != 0;
     ix &= 0x7fffffff;
     if ix > 0x7f800000 {
         /* nan */
@@ -223,6 +202,8 @@ pub fn ynf(n: i32, x: f32) -> f32 {
     if n == 0 {
         return y0f(x);
     }
+
+    let nm1;
     if n < 0 {
         nm1 = -(n + 1);
         sign = (n & 1) != 0;
@@ -238,15 +219,16 @@ pub fn ynf(n: i32, x: f32) -> f32 {
         }
     }
 
-    a = y0f(x);
-    b = y1f(x);
+    let mut a = y0f(x);
+    let mut b = y1f(x);
     /* quit if b is -inf */
-    ib = b.to_bits();
-    i = 0;
+    let mut ib = b.to_bits();
+    let mut i = 0;
+    let mut temp;
     while i < nm1 && ib != 0xff800000 {
         i += 1;
         temp = b;
-        b = (2.0 * (i as f32) / x) * b - a;
+        b = (2.0 * i as f32 / x) * b - a;
         ib = b.to_bits();
         a = temp;
     }
@@ -255,5 +237,14 @@ pub fn ynf(n: i32, x: f32) -> f32 {
         -b
     } else {
         b
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn test_from_ci() {
+        let ret = super::jnf(29, f32::from_bits(1061546867));
+        assert_eq!(ret, f32::from_bits(86));
     }
 }
