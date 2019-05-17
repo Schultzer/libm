@@ -123,6 +123,7 @@ mod musl_reference_tests {
                 "(f32, i32)" => vec![Ty::F32, Ty::I32],
                 "(f64, f64)" => vec![Ty::F64, Ty::F64],
                 "(f64, i32)" => vec![Ty::F64, Ty::I32],
+                "(f32, f32, i32)" => vec![Ty::F32, Ty::F32, Ty::I32],
                 other => vec![parse_ty(other)],
             }
         }

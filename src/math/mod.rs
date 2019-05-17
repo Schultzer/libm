@@ -274,19 +274,24 @@ pub use self::trunc::trunc;
 pub use self::truncf::truncf;
 
 // Private modules
+mod consts;
 mod expo2;
 mod fenv;
 mod k_cos;
 mod k_cosf;
+mod k_cosff64;
 mod k_expo2;
 mod k_expo2f;
+mod k_rem_pio2f;
 mod k_sin;
 mod k_sinf;
+mod k_sinff64;
 mod k_tan;
 mod k_tanf;
 mod rem_pio2;
 mod rem_pio2_large;
 mod rem_pio2f;
+mod rem_pio2ff64;
 
 // Private re-imports
 use self::expo2::expo2;

@@ -1,8 +1,7 @@
-/* origin: FreeBSD /usr/src/lib/msun/src/k_cosf.c */
-/*
+/* kf_cos.c -- float version of k_cos.c
  * Conversion to float by Ian Lance Taylor, Cygnus Support, ian@cygnus.com.
- * Debugged and optimized by Bruce D. Evans.
  */
+
 /*
  * ====================================================
  * Copyright (C) 1993 by Sun Microsystems, Inc. All rights reserved.
@@ -14,17 +13,41 @@
  * ====================================================
  */
 
-/* |cos(x) - c(x)| < 2**-34.1 (~[-5.37e-11, 5.295e-11]). */
-const C0: f64 = -0.499999997251031003120; /* -0x1ffffffd0c5e81.0p-54 */
-const C1: f64 = 0.0416666233237390631894; /*  0x155553e1053a42.0p-57 */
-const C2: f64 = -0.00138867637746099294692; /* -0x16c087e80f1e27.0p-62 */
-const C3: f64 = 0.0000243904487962774090654; /*  0x199342e0ee5069.0p-68 */
+use crate::math::consts::*;
+
+const ONE: f32 = 1.; /* 0x_3f80_0000 */
+const C1: f32 = 4.166_666_790_8_e-02; /* 0x_3d2a_aaab */
+const C2: f32 = -1.388_888_922_5_e-03; /* 0x_bab6_0b61 */
+const C3: f32 = 2.480_158_764_2_e-05; /* 0x_37d0_0d01 */
+const C4: f32 = -2.755_731_429_7_e-07; /* 0x_b493_f27c */
+const C5: f32 = 2.087_572_337_2_e-09; /* 0x_310f_74f6 */
+const C6: f32 = -1.135_964_759_8_e-11; /* 0x_ad47_d74e */
 
 #[inline]
-#[cfg_attr(all(test, assert_no_panic), no_panic::no_panic)]
-pub(crate) fn k_cosf(x: f64) -> f32 {
+pub fn k_cosf(x: f32, y: f32) -> f32 {
+    let mut ix = x.to_bits();
+    ix &= UF_ABS; /* ix = |x|'s high word*/
+    if ix < 0x_3200_0000 {
+        /* if x < 2**27 */
+        if (x as i32) == 0 {
+            /* generate inexact */
+            return ONE;
+        }
+    }
     let z = x * x;
-    let w = z * z;
-    let r = C2 + z * C3;
-    (((1.0 + z * C0) + w * C1) + (w * z) * r) as f32
+    let r = z * (C1 + z * (C2 + z * (C3 + z * (C4 + z * (C5 + z * C6)))));
+    if ix < 0x_3e99_999a {
+        /* if |x| < 0.3 */
+        ONE - (0.5 * z - (z * r - x * y))
+    } else {
+        let qx = if ix > 0x_3f48_0000 {
+            /* x > 0.78125 */
+            0.28125
+        } else {
+            f32::from_bits((ix - 0x_0100_0000) as u32) /* x/4 */
+        };
+        let hz = 0.5 * z - qx;
+        let a = ONE - qx;
+        a - (hz - (z * r - x * y))
+    }
 }

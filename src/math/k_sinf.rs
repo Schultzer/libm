@@ -1,8 +1,7 @@
-/* origin: FreeBSD /usr/src/lib/msun/src/k_sinf.c */
-/*
+/* kf_cos.c -- float version of k_cos.c
  * Conversion to float by Ian Lance Taylor, Cygnus Support, ian@cygnus.com.
- * Optimized by Bruce D. Evans.
  */
+
 /*
  * ====================================================
  * Copyright (C) 1993 by Sun Microsystems, Inc. All rights reserved.
@@ -14,18 +13,33 @@
  * ====================================================
  */
 
-/* |sin(x)/x - s(x)| < 2**-37.5 (~[-4.89e-12, 4.824e-12]). */
-const S1: f64 = -0.166666666416265235595; /* -0x15555554cbac77.0p-55 */
-const S2: f64 = 0.0083333293858894631756; /*  0x111110896efbb2.0p-59 */
-const S3: f64 = -0.000198393348360966317347; /* -0x1a00f9e2cae774.0p-65 */
-const S4: f64 = 0.0000027183114939898219064; /*  0x16cd878c3b46a7.0p-71 */
+use crate::math::consts::*;
+
+const HALF: f32 = 5.000_000_000_0_e-01; /* 0x_3f00_0000 */
+const S1: f32 = -1.666_666_716_3_e-01; /* 0x_be2a_aaab */
+const S2: f32 = 8.333_333_768_0_e-03; /* 0x_3c08_8889 */
+const S3: f32 = -1.984_127_011_4_e-04; /* 0x_b950_0d01 */
+const S4: f32 = 2.755_731_429_7_e-06; /* 0x_3638_ef1b */
+const S5: f32 = -2.505_075_968_9_e-08; /* 0x_b2d7_2f34 */
+const S6: f32 = 1.589_691_017_7_e-10; /* 0x_2f2e_c9d3 */
 
 #[inline]
-#[cfg_attr(all(test, assert_no_panic), no_panic::no_panic)]
-pub(crate) fn k_sinf(x: f64) -> f32 {
+pub fn k_sinf(x: f32, y: f32, iy: bool) -> f32 {
+    let mut ix = x.to_bits();
+    ix &= UF_ABS; /* high word of x */
+    if ix < 0x_3200_0000 {
+        /* |x| < 2**-27 */
+        if (x as i32) == 0 {
+            /* generate inexact */
+            return x;
+        }
+    }
     let z = x * x;
-    let w = z * z;
-    let r = S3 + z * S4;
-    let s = z * x;
-    ((x + s * (S1 + z * S2)) + s * w * r) as f32
+    let v = z * x;
+    let r = S2 + z * (S3 + z * (S4 + z * (S5 + z * S6)));
+    if !iy {
+        x + v * (S1 + z * r)
+    } else {
+        x - ((z * (HALF * y - v * r) - y) - v * S1)
+    }
 }

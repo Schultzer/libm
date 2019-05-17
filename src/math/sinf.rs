@@ -14,7 +14,9 @@
  * ====================================================
  */
 
-use super::{k_cosf, k_sinf, rem_pio2f};
+use super::k_cosff64::k_cosf;
+use super::k_sinff64::k_sinf;
+use super::rem_pio2ff64::rem_pio2f;
 
 use core::f64::consts::FRAC_PI_2;
 

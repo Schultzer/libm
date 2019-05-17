@@ -1,47 +1,65 @@
-use core::f32;
+/* sf_floor.c -- float version of s_floor.c.
+ * Conversion to float by Ian Lance Taylor, Cygnus Support, ian@cygnus.com.
+ */
 
+/*
+ * ====================================================
+ * Copyright (C) 1993 by Sun Microsystems, Inc. All rights reserved.
+ *
+ * Developed at SunPro, a Sun Microsystems, Inc. business.
+ * Permission to use, copy, modify, and distribute this
+ * software is freely granted, provided that this notice
+ * is preserved.
+ * ====================================================
+ */
+
+const HUGE: f32 = 1_e30;
+use crate::math::consts::*;
+
+/// Return x rounded toward -inf to integral value
+///
+/// Method:
+/// Bit twiddling.
+/// Exception:
+/// Inexact flag raised if x not equal to floorf(x).
 #[inline]
-#[cfg_attr(all(test, assert_no_panic), no_panic::no_panic)]
 pub fn floorf(x: f32) -> f32 {
-    // On wasm32 we know that LLVM's intrinsic will compile to an optimized
-    // `f32.floor` native instruction, so we can leverage this for both code size
-    // and speed.
-    llvm_intrinsically_optimized! {
-        #[cfg(target_arch = "wasm32")] {
-            return unsafe { ::core::intrinsics::floorf32(x) }
+    let mut i0 = x.to_bits();
+    let sign = (i0 >> 31) != 0;
+    let ix = i0 & UF_ABS;
+    let j0 = ((ix >> 23) - 0x7f) as i32;
+    if j0 < 23 {
+        if j0 < 0 {
+            /* raise inexact if x != 0 */
+            if HUGE + x > 0. {
+                /* return 0*sign(x) if |x|<1 */
+                if !sign {
+                    i0 = 0;
+                } else if ix != 0 {
+                    i0 = 0x_bf80_0000;
+                }
+            }
+        } else {
+            let i = (0x_007f_ffff >> j0) as u32;
+            if (i0 & i) == 0 {
+                /* x is integral */
+                return x;
+            }
+            if HUGE + x > 0. {
+                /* raise inexact flag */
+                if sign {
+                    i0 += UF_MIN >> j0;
+                }
+                i0 &= !i;
+            }
         }
-    }
-    let mut ui = x.to_bits();
-    let e = (((ui >> 23) as i32) & 0xff) - 0x7f;
-
-    if e >= 23 {
-        return x;
-    }
-    if e >= 0 {
-        let m: u32 = 0x007fffff >> e;
-        if (ui & m) == 0 {
-            return x;
-        }
-        force_eval!(x + f32::from_bits(0x7b800000));
-        if ui >> 31 != 0 {
-            ui += m;
-        }
-        ui &= !m;
     } else {
-        force_eval!(x + f32::from_bits(0x7b800000));
-        if ui >> 31 == 0 {
-            ui = 0;
-        } else if ui << 1 != 0 {
-            return -1.0;
-        }
+        return if ix >= UF_INF {
+            /* inf or NaN */
+            x + x
+        } else {
+            x /* x is integral */
+        };
     }
-    f32::from_bits(ui)
-}
-
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn no_overflow() {
-        assert_eq!(super::floorf(0.5), 0.0);
-    }
+    f32::from_bits(i0)
 }

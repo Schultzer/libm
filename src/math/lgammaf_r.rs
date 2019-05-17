@@ -13,7 +13,9 @@
  * ====================================================
  */
 
-use super::{floorf, k_cosf, k_sinf, logf};
+use super::k_cosff64::k_cosf;
+use super::k_sinff64::k_sinf;
+use super::{floorf, logf};
 
 const PI: f32 = 3.1415927410e+00; /* 0x40490fdb */
 const A0: f32 = 7.7215664089e-02; /* 0x3d9e233f */

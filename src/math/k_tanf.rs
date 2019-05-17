@@ -1,47 +1,100 @@
-/* origin: FreeBSD /usr/src/lib/msun/src/k_tan.c */
+/* kf_tan.c -- float version of k_tan.c
+ * Conversion to float by Ian Lance Taylor, Cygnus Support, ian@cygnus.com.
+ */
+
 /*
  * ====================================================
- * Copyright 2004 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright (C) 1993 by Sun Microsystems, Inc. All rights reserved.
  *
+ * Developed at SunPro, a Sun Microsystems, Inc. business.
  * Permission to use, copy, modify, and distribute this
  * software is freely granted, provided that this notice
  * is preserved.
  * ====================================================
  */
 
-/* |tan(x)/x - t(x)| < 2**-25.5 (~[-2e-08, 2e-08]). */
-const T: [f64; 6] = [
-    0.333331395030791399758,   /* 0x15554d3418c99f.0p-54 */
-    0.133392002712976742718,   /* 0x1112fd38999f72.0p-55 */
-    0.0533812378445670393523,  /* 0x1b54c91d865afe.0p-57 */
-    0.0245283181166547278873,  /* 0x191df3908c33ce.0p-58 */
-    0.00297435743359967304927, /* 0x185dadfcecf44e.0p-61 */
-    0.00946564784943673166728, /* 0x1362b9bf971bcd.0p-59 */
+use crate::math::consts::*;
+use crate::math::fabsf;
+
+const ONE: f32 = 1.; /* 0x_3f80_0000 */
+const PIO4: f32 = 7.853_981_256_5_e-01; /* 0x_3f49_0fda */
+const PIO4_LO: f32 = 3.774_894_707_9_e-08; /* 0x_3322_2168 */
+const T: [f32; 13] = [
+    3.333_333_432_7_e-01,  /* 0x_3eaa_aaab */
+    1.333_333_402_9_e-01,  /* 0x_3e08_8889 */
+    5.396_825_447_7_e-02,  /* 0x_3d5d_0dd1 */
+    2.186_948_806_0_e-02,  /* 0x_3cb3_27a4 */
+    8.863_239_549_1_e-03,  /* 0x_3c11_371f */
+    3.592_079_039_7_e-03,  /* 0x_3b6b_6916 */
+    1.456_209_458_4_e-03,  /* 0x_3abe_de48 */
+    5.880_412_645_6_e-04,  /* 0x_3a1a_26c8 */
+    2.464_631_397_7_e-04,  /* 0x_3981_37b9 */
+    7.817_944_424_5_e-05,  /* 0x_38a3_f445 */
+    7.140_725_210_8_e-05,  /* 0x_3895_c07a */
+    -1.855_863_774_8_e-05, /* 0x_b79b_ae5f */
+    2.590_730_582_6_e-05,  /* 0x_37d9_5384 */
 ];
 
 #[inline]
-#[cfg_attr(all(test, assert_no_panic), no_panic::no_panic)]
-pub(crate) fn k_tanf(x: f64, odd: bool) -> f32 {
-    let z = x * x;
-    /*
-     * Split up the polynomial into small independent terms to give
-     * opportunities for parallel evaluation.  The chosen splitting is
-     * micro-optimized for Athlons (XP, X64).  It costs 2 multiplications
-     * relative to Horner's method on sequential machines.
-     *
-     * We add the small terms from lowest degree up for efficiency on
-     * non-sequential machines (the lowest degree terms tend to be ready
-     * earlier).  Apart from this, we don't care about order of
-     * operations, and don't need to to care since we have precision to
-     * spare.  However, the chosen splitting is good for accuracy too,
-     * and would give results as accurate as Horner's method if the
-     * small terms were added from highest degree down.
+pub fn k_tanf(mut x: f32, mut y: f32, iy: i32) -> f32 {
+    let mut z: f32;
+    let mut w: f32;
+    let hx = x.to_bits() as i32;
+    let ix = hx & IF_ABS; /* high word of |x| */
+    if ix < 0x_3180_0000 {
+        /* x < 2**-28 */
+
+        if (x as i32) == 0 {
+            /* generate inexact */
+            return if (ix | (iy + 1)) == 0 {
+                ONE / fabsf(x)
+            } else if iy == 1 {
+                x
+            } else {
+                -ONE / x
+            };
+        }
+    }
+    if ix >= 0x_3f2c_a140 {
+        /* |x|>=0.6744 */
+        if hx < 0 {
+            x = -x;
+            y = -y;
+        }
+        z = PIO4 - x;
+        w = PIO4_LO - y;
+        x = z + w;
+        y = 0.;
+    }
+    z = x * x;
+    w = z * z;
+    /* Break x^5*(T[1]+x^2*T[2]+...) into
+     *      x^5(T[1]+x^4*T[3]+...+x^20*T[11]) +
+     *      x^5(x^2*(T[2]+x^4*T[4]+...+x^22*[T12]))
      */
-    let mut r = T[4] + z * T[5];
-    let t = T[2] + z * T[3];
-    let w = z * z;
-    let s = z * x;
-    let u = T[0] + z * T[1];
-    r = (x + s * u) + (s * w) * (t + w * r);
-    (if odd { -1. / r } else { r }) as f32
+    let mut r = T[1] + w * (T[3] + w * (T[5] + w * (T[7] + w * (T[9] + w * T[11]))));
+    let mut v = z * (T[2] + w * (T[4] + w * (T[6] + w * (T[8] + w * (T[10] + w * T[12])))));
+    let mut s = z * x;
+    r = y + z * (s * (r + v) + y);
+    r += T[0] * s;
+    w = x + r;
+    if ix >= 0x_3f2c_a140 {
+        v = iy as f32;
+        return ((1 - ((hx >> 30) & 2)) as f32) * (v - 2. * (x - (w * w / (w + v) - r)));
+    }
+    if iy == 1 {
+        w
+    } else {
+        /* if allow error up to 2 ulp,
+        simply return -1./(x+r) here */
+        /*  compute -1./(x+r) accurately */
+        let mut i = w.to_bits() as i32;
+        z = f32::from_bits(i as u32 & 0x_ffff_f000);
+        v = r - (z - x); /* z+v = r+x */
+        let a = -1. / w; /* a = -1./w */
+        i = a.to_bits() as i32;
+        let t = f32::from_bits(i as u32 & 0x_ffff_f000);
+        s = 1. + t * z;
+        t + a * (s + t * v)
+    }
 }
