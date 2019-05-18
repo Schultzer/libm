@@ -341,3 +341,34 @@ pub fn yn(n: i32, x: f64) -> f64 {
         b
     }
 }
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn test_from_ci_one() {
+        let ret = super::jn(114, f64::from_bits(4594974205335009568));
+        assert_eq!(ret, f64::from_bits(1617394868955));
+    }
+
+    #[test]
+    fn test_from_ci_two() {
+        let ret = super::jn(136, f64::from_bits(4602429132083530282));
+        assert_eq!(ret, f64::from_bits(15924833));
+    }
+
+    // ---- jn_matches_musl stdout ----
+    // thread 'main' panicked at 'INPUT: [30144, -4503599627370496] EXPECTED: [0] ACTUAL -inf', /target/aarch64-unknown-linux-gnu/release/build/libm-11858a34fff673b0/out/musl-tests.rs:108:17
+    #[test]
+    fn test_from_ci_three() {
+        let ret = super::jn(30144, -f64::from_bits(4503599627370496));
+        assert_eq!(ret, f64::from_bits(0));
+    }
+
+    // ---- yn_matches_musl stdout ----
+    // thread 'main' panicked at 'INPUT: [-79792583, 9218868437227405312] EXPECTED: [0] ACTUAL inf', /target/aarch64-unknown-linux-gnu/release/build/libm-11858a34fff673b0/out/musl-tests.rs:110:17
+    #[test]
+    fn test_from_ci_four() {
+        let ret = super::yn(-79792583, f64::from_bits(9218868437227405312));
+        assert_eq!(ret, f64::from_bits(0));
+    }
+}

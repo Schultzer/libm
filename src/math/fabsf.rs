@@ -5,7 +5,7 @@ pub fn fabsf(x: f32) -> f32 {
     // `f32.abs` native instruction, so we can leverage this for both code size
     // and speed.
     llvm_intrinsically_optimized! {
-        #[cfg(target_arch = "wasm32")] {
+        #[cfg(target_arch = "wasm32", target_arch = "arm")] {
             return unsafe { ::core::intrinsics::fabsf32(x) }
         }
     }

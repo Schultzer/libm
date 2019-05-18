@@ -257,3 +257,12 @@ pub fn ynf(n: i32, x: f32) -> f32 {
         b
     }
 }
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn test_from_ci() {
+        let ret = super::jnf(29, f32::from_bits(1061546867));
+        assert_eq!(ret, f32::from_bits(86));
+    }
+}
