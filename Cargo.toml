@@ -29,6 +29,10 @@ members = [
   "crates/libm-bench",
 ]
 
+[dependencies]
+rand = "0.6.5"
+
+
 [dev-dependencies]
 no-panic = "0.1.8"
 

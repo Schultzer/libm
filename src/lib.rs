@@ -18,6 +18,7 @@
 
 mod math;
 
+extern crate rand;
 use core::{f32, f64};
 
 pub use self::math::*;

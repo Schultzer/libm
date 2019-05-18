@@ -4,6 +4,6 @@
 
 #![allow(dead_code)]
 #![no_std]
-
+extern crate rand;
 #[path = "../../../src/math/mod.rs"]
 mod libm;
